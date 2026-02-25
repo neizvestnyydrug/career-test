@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:fragment="head(title)">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${title}">Карьерный навигатор</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+</head>
+
+<body>
+<!-- Навигационная панель -->
+<nav th:fragment="navbar" class="navbar">
+    <div class="nav-container">
+        <a href="/" class="nav-logo">
+            <span class="logo-icon">🎯</span>
+            <span class="logo-text">Карьерный навигатор</span>
+        </a>
+        <div class="nav-menu">
+            <a href="/" class="nav-link">Главная</a>
+            <a href="/test/schoolboy" class="nav-link">Школьникам</a>
+            <a href="/test/student" class="nav-link">Студентам</a>
+            <a href="/test/working" class="nav-link">Работающим</a>
+        </div>
+    </div>
+</nav>
+
+<!-- Футер -->
+<footer th:fragment="footer" class="footer">
+    <div class="footer-content">
+        <div class="footer-section">
+            <h4>О проекте</h4>
+            <p>Помогаем выбрать правильный карьерный путь с помощью точного тестирования</p>
+        </div>
+        <div class="footer-section">
+            <h4>Контакты</h4>
+            <p>Email: info@career-navigator.ru</p>
+            <p>Телефон: +7 (999) 123-45-67</p>
+        </div>
+        <div class="footer-section">
+            <h4>Мы в соцсетях</h4>
+            <div class="social-links">
+                <a href="#" class="social-link">📱 Telegram</a>
+                <a href="#" class="social-link">📷 Instagram</a>
+                <a href="#" class="social-link">💬 VK</a>
+            </div>
+        </div>
+    </div>
+    <div class="footer-bottom">
+        <p>&copy; 2024 Карьерный навигатор. Все права защищены.</p>
+    </div>
+</footer>
+
+<!-- Модальное окно для предупреждений -->
+<div th:fragment="modal" class="modal" id="modal">
+    <div class="modal-content">
+        <span class="modal-close" onclick="closeModal()">&times;</span>
+        <div class="modal-icon" id="modalIcon">ℹ️</div>
+        <h3 class="modal-title" id="modalTitle">Внимание</h3>
+        <p class="modal-message" id="modalMessage">Текст сообщения</p>
+        <button class="btn btn-primary" onclick="closeModal()">OK</button>
+    </div>
+</div>
+
+<!-- Загрузчик -->
+<div th:fragment="loader" class="loader-overlay" id="loader">
+    <div class="loader-spinner"></div>
+    <p class="loader-text">Загрузка...</p>
+</div>
+</body>
+</html>

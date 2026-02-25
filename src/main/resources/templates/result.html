@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Результаты теста</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .score-max {
+            font-size: 0.8em;
+            color: #999;
+            margin-left: 2px;
+        }
+        .score-value {
+            font-weight: 600;
+            color: #667eea;
+            min-width: 60px;
+            text-align: right;
+        }
+        .error-message {
+            text-align: center;
+            padding: 40px;
+            color: #f44336;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="result-header">
+        <h1>✨ Ваш результат</h1>
+        <p>Спасибо за прохождение теста!</p>
+    </div>
+
+    <div id="resultContainer" class="result-container" style="display: none;">
+        <div class="result-card">
+            <div class="career-badge" id="careerBadge"></div>
+
+            <div class="scores-section">
+                <h2>Ваши показатели</h2>
+                <div class="scores-grid" id="scoresGrid"></div>
+            </div>
+
+            <div class="recommendation-section">
+                <h2>Рекомендация</h2>
+                <p class="recommendation-text" id="recommendationText"></p>
+            </div>
+
+            <div class="detailed-analysis">
+                <h3>Детальный разбор</h3>
+                <p id="detailedAnalysis"></p>
+            </div>
+
+            <div class="action-buttons">
+                <a href="/" class="btn btn-primary">Пройти еще раз</a>
+                <button class="btn btn-secondary" onclick="shareResult()">Поделиться</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="loadingContainer" class="loading-container">
+        <div class="spinner"></div>
+        <p>Загружаем результаты...</p>
+    </div>
+
+    <div id="errorContainer" class="error-message" style="display: none;">
+        <p>Произошла ошибка при загрузке результатов</p>
+        <a href="/" class="btn btn-primary">Вернуться на главную</a>
+    </div>
+</div>
+
+<script>
+    function displayResults() {
+        try {
+            const resultData = sessionStorage.getItem('testResult');
+
+            if (!resultData) {
+                console.log('Нет данных о результате, перенаправление на главную');
+                window.location.href = '/';
+                return;
+            }
+
+            const result = JSON.parse(resultData);
+            console.log('Получены результаты:', result);
+
+            // Проверяем, что результат не пустой
+            if (!result || Object.keys(result).length === 0) {
+                showError('Пустой результат');
+                return;
+            }
+
+            document.getElementById('loadingContainer').style.display = 'none';
+            document.getElementById('resultContainer').style.display = 'block';
+
+            // Устанавливаем бейдж с проверкой на undefined
+            const badge = document.getElementById('careerBadge');
+            const careerPath = result.careerPath || 'Путь не определен';
+            badge.textContent = careerPath;
+
+            // Цвет бейджа в зависимости от пути
+            const colors = {
+                'Лидер развития': '#4CAF50',
+                'Уверенный профессионал': '#2196F3',
+                'Исследователь': '#FF9800',
+                'Первооткрыватель': '#9C27B0',
+                'Путь не определен': '#666'
+            };
+            badge.style.backgroundColor = colors[careerPath] || '#333';
+            badge.style.padding = '10px 20px';
+            badge.style.borderRadius = '30px';
+            badge.style.color = 'white';
+            badge.style.fontWeight = '600';
+            badge.style.display = 'inline-block';
+            badge.style.marginBottom = '20px';
+
+            // Безопасное получение значений с проверкой на null/undefined
+            const awarenessScore = result.awarenessScore || 0;
+            const stabilityScore = result.stabilityScore || 0;
+            const motivationScore = result.motivationScore || 0;
+            const analyticalScore = result.analyticalScore || 0;
+
+            // Отображаем скоринг
+            const scoresGrid = document.getElementById('scoresGrid');
+            scoresGrid.innerHTML = `
+                <div class="score-item">
+                    <div class="score-label">Осознанность</div>
+                    <div class="score-bar">
+                        <div class="score-fill" style="width: ${(awarenessScore / 20) * 100}%"></div>
+                    </div>
+                    <div class="score-value">${awarenessScore}<span class="score-max">/20</span></div>
+                </div>
+                <div class="score-item">
+                    <div class="score-label">Стабильность</div>
+                    <div class="score-bar">
+                        <div class="score-fill" style="width: ${(stabilityScore / 20) * 100}%"></div>
+                    </div>
+                    <div class="score-value">${stabilityScore}<span class="score-max">/20</span></div>
+                </div>
+                <div class="score-item">
+                    <div class="score-label">Мотивация</div>
+                    <div class="score-bar">
+                        <div class="score-fill" style="width: ${(motivationScore / 30) * 100}%"></div>
+                    </div>
+                    <div class="score-value">${motivationScore}<span class="score-max">/30</span></div>
+                </div>
+                <div class="score-item">
+                    <div class="score-label">Аналитика</div>
+                    <div class="score-bar">
+                        <div class="score-fill" style="width: ${(analyticalScore / 30) * 100}%"></div>
+                    </div>
+                    <div class="score-value">${analyticalScore}<span class="score-max">/30</span></div>
+                </div>
+            `;
+
+            // Устанавливаем рекомендацию и детальный анализ
+            document.getElementById('recommendationText').textContent =
+                result.recommendation || 'Рекомендация будет доступна после обработки теста. Пожалуйста, попробуйте пройти тест еще раз.';
+
+            document.getElementById('detailedAnalysis').textContent =
+                result.detailedAnalysis || 'Детальный анализ будет доступен после обработки теста.';
+
+        } catch (error) {
+            console.error('Ошибка при отображении результатов:', error);
+            showError(error.message);
+        }
+    }
+
+    function showError(message) {
+        document.getElementById('loadingContainer').style.display = 'none';
+        document.getElementById('resultContainer').style.display = 'none';
+
+        const errorContainer = document.getElementById('errorContainer');
+        errorContainer.style.display = 'block';
+        errorContainer.innerHTML = `
+            <p>Произошла ошибка при загрузке результатов: ${message}</p>
+            <p>Пожалуйста, попробуйте пройти тест заново.</p>
+            <a href="/" class="btn btn-primary">Вернуться на главную</a>
+        `;
+    }
+
+    function shareResult() {
+        try {
+            const resultData = JSON.parse(sessionStorage.getItem('testResult'));
+            if (!resultData) return;
+
+            const careerPath = resultData.careerPath || 'интересный результат';
+            const recommendation = resultData.recommendation || 'Попробуй пройти тест!';
+
+            const text = `Я прошел тест и получил результат: ${careerPath}! ${recommendation}`;
+
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Мой результат карьерного теста',
+                    text: text,
+                    url: window.location.href
+                }).catch(err => {
+                    console.log('Поделиться отменено или ошибка:', err);
+                });
+            } else {
+                // Копируем в буфер обмена
+                navigator.clipboard.writeText(text).then(() => {
+                    alert('Результат скопирован в буфер обмена!');
+                }).catch(() => {
+                    alert('Скопируйте результат: ' + text);
+                });
+            }
+        } catch (error) {
+            console.error('Ошибка при попытке поделиться:', error);
+        }
+    }
+
+    // Добавляем обработчик на случай, если sessionStorage не работает
+    window.onload = function() {
+        // Небольшая задержка для уверенности, что всё загрузилось
+        setTimeout(displayResults, 100);
+    };
+
+    // Добавляем обработку ошибок sessionStorage
+    window.addEventListener('storage', function(e) {
+        if (e.key === 'testResult') {
+            displayResults();
+        }
+    });
+</script>
+</body>
+</html>

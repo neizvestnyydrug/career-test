@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${title}">Тест</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="container">
+    <div class="test-progress">
+        <div class="progress-bar" id="progressBar" style="width: 0%"></div>
+    </div>
+
+    <div class="test-header">
+        <h1 th:text="${title}"></h1>
+        <p class="question-counter" id="questionCounter">Вопрос 1 из 6</p>
+    </div>
+
+    <form id="testForm" class="test-form">
+        <div id="questionsContainer">
+            <!-- Вопросы будут загружаться динамически через JavaScript -->
+        </div>
+
+        <div class="test-navigation">
+            <button type="button" id="prevBtn" class="btn btn-secondary" onclick="prevQuestion()" disabled>Назад</button>
+            <button type="button" id="nextBtn" class="btn btn-primary" onclick="nextQuestion()">Далее</button>
+            <button type="submit" id="submitBtn" class="btn btn-success" style="display: none;">Завершить</button>
+        </div>
+    </form>
+</div>
+
+<script th:inline="javascript">
+    const userType = /*[[${userType}]]*/ "";
+    const sessionId = /*[[${sessionId}]]*/ "";
+    let userId = null;
+    let currentQuestion = 0;
+    let answers = {};
+
+    // Вопросы для разных типов пользователей
+    const questions = {
+        schoolboy: [
+            {
+                text: "Когда ты думаешь о поступлении, что ты обычно делаешь?",
+                options: [
+                    "Сравниваю программы и предметы",
+                    "Смотрю отзывы студентов",
+                    "Ориентируюсь на советы родителей",
+                    "Выбираю по проходному баллу",
+                    "Выбираю то, где 'больше шансов'",
+                    "Уже давно знаю, куда хочу"
+                ]
+            },
+            {
+                text: "Как часто ты менял(а) предполагаемое направление за последний год?",
+                options: [
+                    "Ни разу",
+                    "1–2 раза",
+                    "3–4 раза",
+                    "Постоянно сомневаюсь"
+                ]
+            },
+            {
+                text: "Если представить себя через 5 лет, тебе легче:",
+                options: [
+                    "Описать конкретную работу и задачи",
+                    "Назвать только сферу",
+                    "Сказать лишь общее направление",
+                    "Сложно представить"
+                ]
+            },
+            {
+                text: "Если предмет кажется сложным, ты чаще:",
+                options: [
+                    "Углубляюсь и пытаюсь понять",
+                    "Стараюсь освоить минимум",
+                    "Теряю интерес",
+                    "Избегаю"
+                ]
+            },
+            {
+                text: "Если все аналитики любят данные, а Иван любит данные, можно ли утверждать, что Иван аналитик?",
+                options: [
+                    "Да",
+                    "Нет",
+                    "Недостаточно информации"
+                ]
+            },
+            {
+                text: "Продолжи последовательность: 2, 6, 12, 20, ?",
+                options: ["26", "28", "30", "32"]
+            }
+        ],
+        student: [
+            {
+                text: "Насколько текущая программа совпала с тем, что ты ожидал(а)?",
+                options: [
+                    "Полностью совпала",
+                    "В целом да",
+                    "Есть существенные расхождения",
+                    "Совсем не то, что представлял(а)"
+                ]
+            },
+            {
+                text: "Бывали ли мысли изучить другое направление параллельно?",
+                options: [
+                    "Нет",
+                    "Иногда",
+                    "Часто",
+                    "Уже изучаю альтернативу"
+                ]
+            },
+            {
+                text: "После учебного дня ты чаще чувствуешь:",
+                options: [
+                    "Интерес и желание углубиться",
+                    "Нормально, без эмоций",
+                    "Усталость и сомнения",
+                    "Разочарование"
+                ]
+            },
+            {
+                text: "Насколько понятно тебе, какие навыки реально востребованы в профессии?",
+                options: [
+                    "Очень понятно",
+                    "В общих чертах",
+                    "Примерно",
+                    "Практически не понимаю"
+                ]
+            },
+            {
+                text: "В таблице 3 столбца с разными значениями. Как бы ты искал закономерности?",
+                type: "text",
+                placeholder: "Опиши свой подход..."
+            },
+            {
+                text: "Если бы можно было начать заново без потери времени, ты бы:",
+                options: [
+                    "Выбрал(а) то же самое",
+                    "Изменил(а) вуз",
+                    "Изменил(а) направление",
+                    "Выбрал(а) бы совсем другую сферу"
+                ]
+            }
+        ],
+        working: [
+            {
+                text: "Насколько текущая работа соответствует тому, что ты представлял(а) в начале пути?",
+                options: [
+                    "Почти идеально",
+                    "В целом соответствует",
+                    "Сильно отличается",
+                    "Совсем не соответствует"
+                ]
+            },
+            {
+                text: "За последний год ты:",
+                options: [
+                    "Углублялся в своей сфере",
+                    "Изучал смежные навыки",
+                    "Осваивал новую область",
+                    "Задумывался о смене профессии"
+                ]
+            },
+            {
+                text: "Что ты чаще чувствуешь в конце недели?",
+                options: [
+                    "Удовлетворение",
+                    "Нейтральность",
+                    "Эмоциональное истощение",
+                    "Желание всё поменять"
+                ]
+            },
+            {
+                text: "Насколько полезен был бы инструмент, показывающий реальные задачи профессии?",
+                options: [
+                    "Очень полезно",
+                    "Скорее полезно",
+                    "Не знаю",
+                    "Вряд ли полезно"
+                ]
+            },
+            {
+                text: "Как ты оцениваешь текущий баланс работы и личной жизни?",
+                options: [
+                    "Отличный баланс",
+                    "Хороший",
+                    "Средний",
+                    "Плохой"
+                ]
+            },
+            {
+                text: "Что для тебя важнее в работе?",
+                options: [
+                    "Финансовое вознаграждение",
+                    "Интересные задачи",
+                    "Коллектив и атмосфера",
+                    "Возможность роста",
+                    "Стабильность"
+                ]
+            }
+        ]
+    };
+
+    // Инициализация теста
+    async function initTest() {
+        try {
+            const response = await fetch(`/api/start-test?userType=${userType}&sessionId=${sessionId}`, {
+                method: 'POST'
+            });
+            const data = await response.json();
+            userId = data.userId;
+            loadQuestion(0);
+        } catch (error) {
+            console.error('Error starting test:', error);
+        }
+    }
+
+    // Загрузка вопроса
+    function loadQuestion(index) {
+        const container = document.getElementById('questionsContainer');
+        const q = questions[userType][index];
+
+        let html = `<div class="question active">
+                <h3>${q.text}</h3>
+                <div class="options">`;
+
+        if (q.type === 'text') {
+            html += `<textarea
+                    name="q${index + 1}"
+                    placeholder="${q.placeholder || 'Введите ваш ответ...'}"
+                    onchange="saveAnswer(${index + 1}, this.value)"
+                    rows="4">${answers[`q${index + 1}`] || ''}</textarea>`;
+        } else if (q.options) {
+            q.options.forEach((option, optIndex) => {
+                const checked = answers[`q${index + 1}`] === optIndex + 1 ? 'checked' : '';
+                html += `<label class="option">
+                        <input type="radio"
+                            name="q${index + 1}"
+                            value="${optIndex + 1}"
+                            ${checked}
+                            onchange="saveAnswer(${index + 1}, ${optIndex + 1})">
+                        <span class="radio-custom"></span>
+                        ${option}
+                    </label>`;
+            });
+        }
+
+        html += `</div></div>`;
+        container.innerHTML = html;
+
+        updateNavigation(index);
+    }
+
+    // Сохранение ответа
+    function saveAnswer(questionNum, value) {
+        answers[`q${questionNum}`] = value;
+    }
+
+    // Переход к следующему вопросу
+    function nextQuestion() {
+        if (!answers[`q${currentQuestion + 1}`]) {
+            alert('Пожалуйста, ответьте на вопрос');
+            return;
+        }
+
+        if (currentQuestion < questions[userType].length - 1) {
+            currentQuestion++;
+            loadQuestion(currentQuestion);
+            updateProgress();
+        }
+    }
+
+    // Переход к предыдущему вопросу
+    function prevQuestion() {
+        if (currentQuestion > 0) {
+            currentQuestion--;
+            loadQuestion(currentQuestion);
+            updateProgress();
+        }
+    }
+
+    // Обновление навигации
+    function updateNavigation(index) {
+        document.getElementById('prevBtn').disabled = index === 0;
+
+        if (index === questions[userType].length - 1) {
+            document.getElementById('nextBtn').style.display = 'none';
+            document.getElementById('submitBtn').style.display = 'inline-block';
+        } else {
+            document.getElementById('nextBtn').style.display = 'inline-block';
+            document.getElementById('submitBtn').style.display = 'none';
+        }
+
+        document.getElementById('questionCounter').textContent =
+            `Вопрос ${index + 1} из ${questions[userType].length}`;
+    }
+
+    // Обновление прогресса
+    function updateProgress() {
+        const progress = ((currentQuestion + 1) / questions[userType].length) * 100;
+        document.getElementById('progressBar').style.width = progress + '%';
+    }
+
+    // Отправка формы
+    document.getElementById('testForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        // Проверяем последний вопрос
+        if (!answers[`q${questions[userType].length}`]) {
+            alert('Пожалуйста, ответьте на вопрос');
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/submit-test/${userId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    userType: userType,
+                    ...answers
+                })
+            });
+
+            const result = await response.json();
+
+            // Сохраняем результат в sessionStorage для страницы результата
+            sessionStorage.setItem('testResult', JSON.stringify(result));
+
+            // Переходим на страницу результата
+            window.location.href = '/result';
+        } catch (error) {
+            console.error('Error submitting test:', error);
+            alert('Произошла ошибка при отправке результатов');
+        }
+    });
+
+    // Запускаем тест при загрузке
+    initTest();
+</script>
+</body>
+</html>

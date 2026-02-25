@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Карьерный навигатор</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="container">
+    <header class="header">
+        <h1>🎯 Карьерный навигатор</h1>
+        <p>Узнай, какая профессия тебе подходит</p>
+    </header>
+
+    <div class="qr-section">
+        <h2>Отсканируй QR-код</h2>
+        <div class="qr-code">
+            <img th:src="'data:image/png;base64,' + ${qrCode}" alt="QR Code">
+        </div>
+        <p class="qr-hint">или перейди по ссылке: <a th:href="@{/}">карьерный-тест.рф</a></p>
+    </div>
+
+    <div class="welcome-section">
+        <h2>Кто ты?</h2>
+        <div class="user-type-cards">
+            <a href="/test/schoolboy" class="card" data-type="schoolboy">
+                <div class="card-icon">🎓</div>
+                <h3>Школьник / Абитуриент</h3>
+                <p>Только выбираешь свой путь</p>
+            </a>
+            <a href="/test/student" class="card" data-type="student">
+                <div class="card-icon">📚</div>
+                <h3>Студент</h3>
+                <p>Учишься и ищешь себя</p>
+            </a>
+            <a href="/test/working" class="card" data-type="working">
+                <div class="card-icon">💼</div>
+                <h3>Работающий</h3>
+                <p>Думаешь о развитии</p>
+            </a>
+        </div>
+    </div>
+
+    <div class="features">
+        <div class="feature">
+            <span class="feature-icon">⏱️</span>
+            <h4>3 минуты</h4>
+            <p>Быстрый, но точный тест</p>
+        </div>
+        <div class="feature">
+            <span class="feature-icon">🎯</span>
+            <h4>Точный результат</h4>
+            <p>На основе твоих ответов</p>
+        </div>
+        <div class="feature">
+            <span class="feature-icon">📊</span>
+            <h4>Детальный разбор</h4>
+            <p>Поймешь свои сильные стороны</p>
+        </div>
+    </div>
+</div>
+
+<script th:inline="javascript">
+    const sessionId = /*[[${sessionId}]]*/ "";
+</script>
+</body>
+</html>
